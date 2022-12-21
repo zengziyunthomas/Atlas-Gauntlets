@@ -19,5 +19,15 @@ Poster
 ## LED Module
 
 ## Reference
+[1]	The Embedded Lab for nRF52DK and BLE (https://drive.google.com/file/d/1Gn-7xy1B7y2GeDa0YqWi9zEPA0GmeFLg/view)
 
+[2]	Introduction to Embedded Systems, 2nd Edition, Edward Ashford Lee and Sanjit Arunkumar Seshia
+
+[3]	32x16 and 32x32 RGB LED Matrix (https://cdn-shop.adafruit.com/product-files/2276/MIT35P6RGBE-AA_6432_11.pdf)
+
+[4]	Arduino Mega (https://docs.arduino.cc/static/88aaeaaded25477450fb5f36cb7be 27d/A000067-datasheet.pdf)
+
+[5] Basic example code in lab VM and the lab handout	
+
+[6] BLE code template (https://github.com/lab11/nrf52xbase/blob/master/lib/simple_ble)
 

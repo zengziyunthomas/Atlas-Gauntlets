@@ -7,6 +7,8 @@ In this project we built a sensor glove which could read the gesture and the mov
 ## Required content for scoring
 Report
 - https://docs.google.com/document/d/1lrwQqitYt119p2mN4PGDiaZlA-H4oOvN/edit
+
 Presentation
 - https://youtu.be/OTnhA-OjA6o
+
 Poster

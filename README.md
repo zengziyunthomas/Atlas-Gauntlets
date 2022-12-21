@@ -25,7 +25,7 @@ Poster
 
 [3]	32x16 and 32x32 RGB LED Matrix (https://cdn-shop.adafruit.com/product-files/2276/MIT35P6RGBE-AA_6432_11.pdf)
 
-[4]	Arduino Mega (https://docs.arduino.cc/static/88aaeaaded25477450fb5f36cb7be 27d/A000067-datasheet.pdf)
+[4]	Arduino Mega (https://docs.arduino.cc/static/88aaeaaded25477450fb5f36cb7be27d/A000067-datasheet.pdf)
 
 [5] Basic example code in lab VM and the lab handout	
 

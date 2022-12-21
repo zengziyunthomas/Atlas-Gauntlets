@@ -1,0 +1,247 @@
+target C {
+    threading: false,
+    build: "../scripts/build_nrf_unix.sh"   
+};
+import Glove from "lib/glove.lf"
+import GyroAngle from "lib/GyroAngle.lf"
+//import ExponentialFilter from "lib/ExponentialFilter.lf"
+import Tilt from "lib/Tilt.lf"
+//import HpFilter from "lib/Filter.lf"
+preamble {=
+    #include "simple_ble.h"
+    #include <ble_advdata.h>
+    #include <math.h>
+    #include <stdbool.h>
+    #include <stdint.h>
+    #include <stdio.h>
+    #include "app_error.h"
+    #include "app_timer.h"
+    #include "nrf.h"
+    #include "nrf_delay.h"
+    #include "nrf_gpio.h"
+    #include "nrf_log.h"
+    #include "nrf_log_ctrl.h"
+    #include "nrf_log_default_backends.h"
+    #include "nrf_pwr_mgmt.h"
+    #include "nrf_drv_spi.h"
+
+    // sensors
+    // #define Finger_1 NRF_GPIO_PIN_MAP(0, 13)
+    // #define Finger_2 NRF_GPIO_PIN_MAP(0, 14)
+    // #define Finger_3 NRF_GPIO_PIN_MAP(0, 15)
+    // #define Finger_4 NRF_GPIO_PIN_MAP(0, 16)
+
+    
+    // Data structures needed for BLE.
+    // See https://github.com/lab11/nrf52x-base/blob/master/lib/simple_ble/README.md
+
+    // BLE Configuration specifies the MAC address and
+    // intervals for advertising and connections.
+
+    static simple_ble_config_t ble_config = {
+            // MAC address: c0:98:e5:49:xx:xx
+            // where the last two octets are given by the device_id below.
+            .platform_id       = 0x49,   // The 4th octet in device BLE address.
+            .device_id         = 0x0018, // TODO: replace with your lab bench number
+            .adv_name          = "NRF_BOARD", // used in advertisements if there is room
+            .adv_interval      = MSEC_TO_UNITS(200, UNIT_0_625_MS),
+            .min_conn_interval = MSEC_TO_UNITS(50, UNIT_1_25_MS),
+            .max_conn_interval = MSEC_TO_UNITS(200, UNIT_1_25_MS),
+    };
+
+    // Specify a unique ID for the ROMI service.
+    // UUID: 85e43f4d-b4a7-4c6f-ba86-2db3c40a2c83
+    static simple_ble_service_t my_service = {{
+        .uuid128 = {0x83,0x2c,0x0a,0xc4,0xb3,0x2d,0x86,0xba,
+                    0x6f,0x4c,0xa7,0xb4,0x4d,0x3f,0xe4,0x85}
+    }};
+
+    // Characteristic reflecting key presses.
+    // The characteristic is identified within the service by a 16-bit unique ID.
+    static simple_ble_char_t key_state_characteristic = {.uuid16 = 0x7182};
+
+    static char my_char_data_1[6];
+    static char my_char_data_2[6];
+    static char my_char_data_3[4];
+    static char my_char_data[20];
+    //uint8_t Finger_states[4];
+    
+=}
+
+ reactor Board (period:time(50 ms)){
+    input clck:int;
+    input finger1:float;
+    input finger2:float;
+    input finger3:float;
+    input finger4:float;
+    input pitch_ang:float;
+    input gyro_ang:float;
+    timer t(0, period);
+    state local_max: float(0);
+    state flag: float(0);
+    state val: float(0);
+  
+    initial mode INIT {
+        reaction(startup) -> LOOP {=
+            ret_code_t error_code = NRF_SUCCESS;
+
+            // initialize RTT library
+            error_code = NRF_LOG_INIT(NULL);
+            APP_ERROR_CHECK(error_code);
+            NRF_LOG_DEFAULT_BACKENDS_INIT();
+            //printf("Log initialized!\n");
+            // setup ble
+            simple_ble_app_t* simple_ble_app;
+            simple_ble_app = simple_ble_init(&ble_config);
+            simple_ble_add_service(&my_service);
+            simple_ble_add_characteristic(1,0,1,0,sizeof(my_char_data), (uint8_t*)&my_char_data,&my_service, &key_state_characteristic);
+            //simple_ble_add_characteristic(1,0,1,0,sizeof(my_char_data_2), (uint8_t*)&my_char_data_2,&my_service, &key_state_characteristic_2);
+            simple_ble_adv_only_name();
+            
+            if (error_code == NRF_SUCCESS) {
+                SET_MODE(LOOP);                
+            }
+        =}
+    }
+    mode LOOP {
+        reaction(clck,finger1,finger2,finger3,finger4,pitch_ang, gyro_ang) {=
+            
+            if (finger1->value <17 ) {
+                my_char_data_3[0]='1'; 
+            } 
+            else  {
+                my_char_data_3[0]='0';
+            }
+
+            if (finger2->value <1 ) {
+                my_char_data_3[1]='1'; 
+            } 
+            else {
+                my_char_data_3[1]='0';
+            }
+            if (finger3->value <1 ) {
+                my_char_data_3[2]='1'; 
+            } 
+            else  {
+                my_char_data_3[2]='0';
+            }
+            if (finger4->value >3 ) {
+                my_char_data_3[3]='1'; 
+            } 
+            else {
+                my_char_data_3[3]='0';
+            }
+
+                if( abs(gyro_ang -> value) <= 3){
+                    self -> flag = 0; //initialization when come nears 0
+                    self -> local_max = 0; // ready for next detection
+                    self -> val =0;
+                }
+                if(abs(self -> local_max) < abs(gyro_ang -> value)){
+                    // if user's hand is moving
+                    self -> local_max = gyro_ang -> value;
+                }
+                
+                else{
+                    // if the gyro.z is decreasing
+                    if(self -> flag == 0){
+                        // if this move hasn't been recorded
+                        self -> val = self -> local_max;
+                        self -> flag = 25;
+                    }
+                    else if (self->flag>5){
+                        self->flag--;
+                        self -> val = self -> local_max;
+                    }
+                    else{
+                        // if alredy been recorded, no need to get the val again
+                        self -> val = 0;
+                    }
+                }
+            
+            //if (abs(self->val)>0 || abs(pitch_ang->value+6)>=10 ||) {
+               
+                sprintf(my_char_data_1,"%.1f",pitch_ang->value+6);
+                sprintf(my_char_data_2,"%.1f",self->val);
+                int ff=0;
+                for (int i=0;i<6;i++) {
+                    if ( (my_char_data_2[i]==' ' || !my_char_data_2[i]) || ff==1) {
+                        ff=1;
+                        my_char_data_2[i]=','; 
+                    }
+                    if (!my_char_data_1[i]) {
+                        my_char_data_1[i]=',';
+                    }
+                
+                for (int i=0;i<20;i++) {
+                    if (i<6) {
+                        my_char_data[i] = my_char_data_1[i];
+                    }
+                    else if (i>=6 && i <12) {
+                        my_char_data[i] = my_char_data_2[i-6];
+                    }
+                    else if (i>=12 && i <16) {
+                        my_char_data[i] = my_char_data_3[i-12];
+                    }
+                } }
+            //printf("%s\t , pitch: %.2lf\t val:%.2lf \n",my_char_data, pitch_ang->value, self -> val);
+            //printf("%s\t , pitch: %.2lf\t val:%.2lf\t fingers: %s \n",my_char_data, pitch_ang->value, self -> val, my_char_data_3);
+            //("gyro: %.1f\t local_max: %.1f \t val:%.1f\n", gyro_ang->value, self -> local_max, self -> val);
+            printf("finger1: %lf \t finger2: %lf finger3: %lf \t finger4: %lf\n",finger1->value, finger2->value,finger3->value, finger4->value);
+        =}
+        
+    }
+    }
+
+
+/**
+ * Create an ArrowKeys reactor that listens for Bluetooth signals
+ * reporting when the user presses arrow keys on a computer that is
+ * paired with the nRF52 running this program and displays which
+ * arrow keys are pressed.
+ */
+main reactor {
+    //arduino = new Arduino();
+    timer t(0, 50 msec);
+    state local_max: float(0)
+    state flag: float(0)
+    state val: float(0)
+ 
+    reaction(t) -> board.clck , glove.trigger{=
+        SET(board.clck, 1);
+        lf_set(glove.trigger,true);
+       // printf('1');
+    =}
+    board= new Board ();
+    glove = new Glove();
+    gyro = new GyroAngle();
+    ang = new  Tilt();
+    glove.f1->board.finger1;
+    glove.f2->board.finger2;
+    glove.f3->board.finger3;
+    glove.f4->board.finger4;
+    
+    // e1=new HpFilter(); 
+    // e2=new HpFilter(); 
+    // e3=new ExponentialFilter(); 
+    // glove.x->e1.in;
+    // glove.y->e2.in;
+    // glove.z->e3.in;
+
+    glove.x -> ang.x;
+    glove.y -> ang.y;
+    glove.z -> ang.z;
+
+    
+    //ang.pitch -> e1.in;
+ 
+    gyro.z -> board.gyro_ang;
+    ang.pitch ->board.pitch_ang;
+    // gyro.x->e1.in; 
+    // gyro.y->e2.in;
+    // gyro.z->e3.in;
+    // e1.out -> ang.x;
+    // e2.out -> ang.y;
+ 
+}
+///

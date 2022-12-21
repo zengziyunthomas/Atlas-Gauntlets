@@ -12,12 +12,19 @@ Presentation
 - https://youtu.be/OTnhA-OjA6o
 
 Poster
+- https://drive.google.com/file/d/14UvpmjGqeN1zCTDOllGIZBgKGC2CLaDc/view
 
 
 ## Sensor Glove
+The basic idea is to build the connection between the real world and the digital. Several sensors are used to measure the physical quantities and convert signals to digital numbers. The basic idea is to use the LF we learned in the lab to coordinate each section and integrate them into a single characteristic and then transit it to ESP32, which will process our data and give command to the LED matrix.
 
 ## LED Module
 
+The LED module is built with Adafruit 64x32 RGB LED matrix, Adafruit esp32 feather and Arduino Mega 2560. 
+
+The LED module is designed to receive the BLE advertisement and then encode different behaviors into binary codes and then control the LED matrix to respond timely and correctly to the sensor glove. The Adafruit LED matrix is highly integrated and has a well defined behavior implemented with the arduino library.
+
+The function of the esp32 feather is to communicate with the nrf board in sensor glove through BLE and encode the behavior into binary codes which could be sent to arduino mega.
 ## Reference
 [1]	The Embedded Lab for nRF52DK and BLE (https://drive.google.com/file/d/1Gn-7xy1B7y2GeDa0YqWi9zEPA0GmeFLg/view)
 

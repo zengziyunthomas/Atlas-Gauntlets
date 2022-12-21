@@ -1,9 +1,10 @@
 # Sensor Glove Controlled LED Matrix
 
-![contents](https://github.com/zengziyunthomas/Atlas-Gauntlets/blob/main/img/sensor%20glove.png)
+![image](https://github.com/zengziyunthomas/Atlas-Gauntlets/blob/main/img/sensor%20glove.png)
 ## Abstract
 In this project we built a sensor glove which could read the gesture and the movement of the hand. Then to dig more about how it could be applied in daily life, we connected it to a LED matrix board to enable us to control the behavior of the LED matrix. Up to now we designed and implemented three modes for it. They are “Cursor”, “Writing”, “Printing” respectively with different functionality. The “Cursor” mode means we can control the movement of a cursor on the LED board with respect to the movement of the hand. The “Writing” mode means that we can write locus on the board, and based on the gesture, we can also erase the writings out. The “Print” mode means that the board can print different slogans based on different gestures of the hand.
 
+![image](https://github.com/zengziyunthomas/Atlas-Gauntlets/blob/main/img/overview.png)
 
 ## Required Content for Scoring
 Report
@@ -26,6 +27,9 @@ The LED module is built with Adafruit 64x32 RGB LED matrix, Adafruit esp32 feath
 The LED module is designed to receive the BLE advertisement and then encode different behaviors into binary codes and then control the LED matrix to respond timely and correctly to the sensor glove. The Adafruit LED matrix is highly integrated and has a well defined behavior implemented with the arduino library.
 
 The function of the esp32 feather is to communicate with the nrf board in sensor glove through BLE and encode the behavior into binary codes which could be sent to arduino mega.
+
+![image](https://github.com/zengziyunthomas/Atlas-Gauntlets/blob/main/img/state%20machine.png)
+
 ## Reference
 [1]	The Embedded Lab for nRF52DK and BLE (https://drive.google.com/file/d/1Gn-7xy1B7y2GeDa0YqWi9zEPA0GmeFLg/view)
 
